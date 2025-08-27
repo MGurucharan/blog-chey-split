@@ -25,5 +25,5 @@ export default defineConfig({
       }
     },
   },
-  base: mode === "github" ? "/blog-chey/" : "/",  // 👈 dynamic base
+  base: process.env.VITE_BASE_PATH || "/blog-chey/"
 });
