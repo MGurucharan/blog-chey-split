@@ -12,11 +12,13 @@ const SendDocument = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  const API_BASE=import.meta.env.VITE_API_BASE;
+
   const handleDelete = async (blog_id) => {
     try {
       const option = prompt("Are you sure ?");
       if (option && option.toLowerCase() === "yes") {
-        await axios.delete(`/api/delete/${blog_id}`);
+        await axios.delete(`${API_BASE}/api/delete/${blog_id}`);
         alert("Successfully deleted !");
         setBlogs((prevBlogs) =>
           prevBlogs.filter((blog) => blog._id !== blog_id)
@@ -30,7 +32,7 @@ const SendDocument = () => {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const response = await axios.get("/api/items");
+        const response = await axios.get(`${API_BASE}/api/items`);
         setBlogs(response.data);
       } catch (error) {
         setError(error.message || "Something went wrong");
