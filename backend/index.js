@@ -1,8 +1,6 @@
 import express from "express";
 import mongoose from "mongoose";
 import Item from "./models/Item.js";
-import bodyParser from "body-parser";
-import { Collection } from "mongodb";
 import axios from "axios";
 import multer from "multer";
 import path from "path";
@@ -11,28 +9,25 @@ import dotenv from "dotenv";
 dotenv.config();
 import { fileURLToPath } from "url";
 import fs from "fs";
-import sharp from "sharp"; // Add this import at the top
-import { useParams } from "react-router-dom";
+import sharp from "sharp"; 
 
-const app1 = express();
-const PORT = process.env.PORT || 5000;
+const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-app1.use(
+app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
 //Server will be running on localhost:5000 port
-app1.listen(PORT, () => console.log(`Main Server running on port ${PORT}`));
-app1.use(express.json({ limit: "50mb" })); // or more depending on expected size
-app1.use(express.urlencoded({ extended: true, limit: "50mb" }));
-app1.use("/uploads", express.static("uploads"));
+app.use(express.json({ limit: "50mb" })); // or more depending on expected size
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+app.use("/uploads", express.static("uploads"));
 
 
 
@@ -54,7 +49,13 @@ const upload = multer({
 mongoose.connect(process.env.MONGO_URI);
 
 
-app1.post("/api/senddocument", upload.single("image"), async (req, res) => {
+
+app.get("/", (req, res) => {
+  res.send("Backend Running !!!");
+});
+
+
+app.post("/api/senddocument", upload.single("image"), async (req, res) => {
   try {
     let imageUrl = null;
     if (req.file) {
@@ -74,7 +75,7 @@ app1.post("/api/senddocument", upload.single("image"), async (req, res) => {
   }
 });
 
-app1.post("/api/upload-image", upload.single("image"), async (req, res) => {
+app.post("/api/upload-image", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
       throw new Error("No file uploaded");
@@ -132,7 +133,7 @@ app1.post("/api/upload-image", upload.single("image"), async (req, res) => {
 });
 
 //gets all the items from the collection
-app1.get("/api/items", async (req, res) => {
+app.get("/api/items", async (req, res) => {
   try {
     const items = await Item.find({}, "title content summary"); // gets all the data from the database
     res.json(items);
@@ -142,7 +143,7 @@ app1.get("/api/items", async (req, res) => {
   }
 });
 
-app1.get("/api/items/:id", async (req, res) => {
+app.get("/api/items/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const item = await Item.findById(id);
@@ -156,7 +157,7 @@ app1.get("/api/items/:id", async (req, res) => {
   }
 });
 
-app1.put("/api/update/:id", async (req, res) => {
+app.put("/api/update/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const title = req.body.title;
@@ -178,7 +179,7 @@ app1.put("/api/update/:id", async (req, res) => {
   }
 });
 
-app1.delete("/api/delete/:id", async (req, res) => {
+app.delete("/api/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const result = await Item.deleteOne({ _id: id });
@@ -194,7 +195,7 @@ app1.delete("/api/delete/:id", async (req, res) => {
   }
 });
 
-app1.post("/api/feedbackpost/:id",async (req,res)=>{
+app.post("/api/feedbackpost/:id",async (req,res)=>{
     try {
         const {id}=req.params
         const feedback=req.body.updatePOCfeedbacks
@@ -211,10 +212,6 @@ app1.post("/api/feedbackpost/:id",async (req,res)=>{
 //openaiserver.js
 
 
-const app2 = express();
-app2.use(cors());
-app2.use(express.json({ limit: "50mb" }));
-app2.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 const API_KEY = process.env.OPENAI_API_KEY;
 
@@ -224,11 +221,7 @@ const sanitizePrompt = (prompt) => {
   return words.length > 1000 ? words.slice(0, 1000).join(" ") : noImagePrompt;
 };
 
-app2.get("/", (req, res) => {
-  res.send("OpenAI proxy server is running.");
-});
-
-app2.post("/openai-api/openai", async (req, res) => {
+app.post("/openai-api/openai", async (req, res) => {
   const { prompt } = req.body;
 
   try {
@@ -258,4 +251,6 @@ app2.post("/openai-api/openai", async (req, res) => {
   }
 });
 
-app2.listen(3001, () => console.log('OpenAIServer running on http://localhost:3001'));
+export default app;
+
+
