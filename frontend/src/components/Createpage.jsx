@@ -6,7 +6,6 @@ import Plasma from "./Plasma";
 import axios from "axios";
 
 const Createpage = () => {
-  const API_BASE = import.meta.env.VITE_API_BASE;
   const editor = useRef(null);
   const navigate = useNavigate();
   const [isSummarizing, setIsSummarizing] = useState(false);
@@ -38,7 +37,7 @@ const Createpage = () => {
 
     try {
       const strippedContent = content.replace(/<img[^>]*>/g, "[image]");
-      const summaryRes = await axios.post(`${API_BASE}/openai-api/openai`, {
+      const summaryRes = await axios.post("/openai-api/openai", {
         prompt: `Below is an HTML blog post. Ignore the [image] placeholders and generate a small excerpt of 30 words only.\n\n${strippedContent}`,
       });
       const summaryText = summaryRes.data.choices[0].message.content;
@@ -46,7 +45,7 @@ const Createpage = () => {
 
       
       await axios.post(
-        `${API_BASE}/api/senddocument`,
+        "/api/senddocument",
         { title, content: cleanContent, summary: summaryText },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -72,7 +71,7 @@ const Createpage = () => {
     defaultActionOnPaste: "insert_as_plaintext",
     uploader: {
       insertImageAsBase64URI: true,
-      url: `${API_BASE}/api/upload-image`,
+      url: "/api/upload-image",
       format: "json",
       method: "POST",
       filesVariableName: () => "image",
