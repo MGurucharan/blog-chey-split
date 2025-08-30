@@ -2,26 +2,25 @@ import express from "express";
 import mongoose from "mongoose";
 import Item from "./models/Item.js";
 import bodyParser from "body-parser";
+import { Collection } from "mongodb";
+import axios from "axios";
 import multer from "multer";
 import path from "path";
 import cors from "cors";
 import dotenv from "dotenv";
+dotenv.config();
 import { fileURLToPath } from "url";
 import fs from "fs";
-import sharp from "sharp";
-import axios from "axios";
+import sharp from "sharp"; // Add this import at the top
+import { useParams } from "react-router-dom";
 
-dotenv.config();
-
-const app = express();
+const app1 = express();
 const PORT = process.env.PORT || 5000;
-const API_KEY = process.env.OPENAI_API_KEY;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ---------- Middlewares ----------
-app.use(
+app1.use(
   cors({
     origin: "http://localhost:5173",
     methods: ["GET", "POST", "PUT", "DELETE"],
@@ -29,20 +28,20 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ extended: true, limit: "50mb" }));
-app.use("/uploads", express.static("uploads"));
+//Server will be running on localhost:5000 port
+app1.listen(PORT, () => console.log(`Main Server running on port ${PORT}`));
+app1.use(express.json({ limit: "50mb" })); // or more depending on expected size
+app1.use(express.urlencoded({ extended: true, limit: "50mb" }));
+app1.use("/uploads", express.static("uploads"));
 
-// ---------- MongoDB Connection ----------
-mongoose.connect(process.env.MONGO_URI);
 
-// ---------- Multer Config ----------
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/");
+    cb(null, "uploads/"); // This is your folder to save images
   },
   filename: function (req, file, cb) {
-    cb(null, Date.now() + "-" + file.originalname);
+    cb(null, Date.now() + "-" + file.originalname); // Avoid file name collisions
   },
 });
 
@@ -51,26 +50,187 @@ const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
 });
 
-// ---------- Utility ----------
+//connects server to MongoDB
+mongoose.connect(process.env.MONGO_URI);
+
+
+app1.post("/api/senddocument", upload.single("image"), async (req, res) => {
+  try {
+    let imageUrl = null;
+    if (req.file) {
+      imageUrl = `${req.protocol}://${req.get("host")}/uploads/${
+        req.file.filename
+      }`;
+    }
+    // Get form data from request body
+    const title = req.body.title;
+    const content = req.body.content;
+    const summary=req.body.summary;
+    await Item.insertMany([{ title, content, imageUrl , summary }]);
+    res.status(200).json({ message: "Document sent", imageUrl });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app1.post("/api/upload-image", upload.single("image"), async (req, res) => {
+  try {
+    if (!req.file) {
+      throw new Error("No file uploaded");
+    }
+
+    const filePath = path.join(__dirname, "uploads", req.file.filename);
+
+    try {
+      // Process image with sharp (handles AVIF/WEBP)
+      const processedImage = await sharp(filePath)
+        .toFormat("jpeg") // Convert to JPEG for maximum compatibility
+        .jpeg({ quality: 80 }) // Set quality (0-100)
+        .toBuffer();
+
+      const base64Image = processedImage.toString("base64");
+      const dataURI = `data:image/jpeg;base64,${base64Image}`;
+
+      // Clean up the temporary file
+      fs.unlinkSync(filePath);
+
+      res.status(200).json({
+        data: {
+          files: [dataURI],
+          base64: dataURI,
+          success: true,
+        },
+      });
+    } catch (processingError) {
+      console.error("Image processing failed:", processingError);
+      // Fallback to original file if processing fails
+      const fileData = fs.readFileSync(filePath);
+      const base64Image = fileData.toString("base64");
+      const dataURI = `data:${req.file.mimetype};base64,${base64Image}`;
+
+      fs.unlinkSync(filePath);
+
+      res.status(200).json({
+        data: {
+          files: [dataURI],
+          base64: dataURI,
+          success: true,
+        },
+      });
+    }
+  } catch (error) {
+    console.error("Upload error:", error);
+    res.status(500).json({
+      data: {
+        messages: ["Failed to process image. Please try a different format."],
+        files: [],
+        success: false,
+      },
+    });
+  }
+});
+
+//gets all the items from the collection
+app1.get("/api/items", async (req, res) => {
+  try {
+    const items = await Item.find({}, "title content summary"); // gets all the data from the database
+    res.json(items);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server Error");
+  }
+});
+
+app1.get("/api/items/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const item = await Item.findById(id);
+    if (!item) {
+      return res.status(404).json({ message: "Item not found " });
+    }
+    res.json(item);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+    console.log("Error!");
+  }
+});
+
+app1.put("/api/update/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const title = req.body.title;
+    const content = req.body.content;
+    const summary= req.body.summary;
+    const result = await Item.updateOne(
+      { _id: id },
+      { $set: { title, content, summary} }
+    );
+    // if (result.modifiedCount == 0) {
+    //   return res
+    //     .status(404)
+    //     .json({ message: "Blog not found or no changes made!!" });
+    //     console.log("No changes made!!!");
+    // }
+    res.status(200).json({ message: "Successfully updated the Blog!" });
+  } catch (error) {
+    console.log({ Error: error.message });
+  }
+});
+
+app1.delete("/api/delete/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await Item.deleteOne({ _id: id });
+    if (result.deletedCount == 0) {
+      return res.status(404).json({ message: "Blog not found." });
+    }
+    res.status(200).json({ message: "Successfully deleted the blog!" });
+  } catch (error) {
+    console.log({ Error: error.message });
+    res
+      .status(500)
+      .json({ error: "Something went wrong while deleting the blog." });
+  }
+});
+
+app1.post("/api/feedbackpost/:id",async (req,res)=>{
+    try {
+        const {id}=req.params
+        const feedback=req.body.updatePOCfeedbacks
+        const result = await Item.updateOne({_id:id},{$push:{feedback:{$each:feedback}}})
+        res.status(200).json({message:"Feedback added",result})
+    } catch (error) {
+        console.error(error)
+        res.status(500).json({error:"Server error while adding feedback!"})
+    }
+})
+
+
+
+//openaiserver.js
+
+
+const app2 = express();
+app2.use(cors());
+app2.use(express.json({ limit: "50mb" }));
+app2.use(express.urlencoded({ extended: true, limit: "50mb" }));
+
+const API_KEY = process.env.OPENAI_API_KEY;
+
 const sanitizePrompt = (prompt) => {
-  const noImagePrompt = prompt.replace(
-    /<img[^>]+src="data:image\/[^">]+"[^>]*>/g,
-    "[image]"
-  );
+  const noImagePrompt = prompt.replace(/<img[^>]+src="data:image\/[^">]+"[^>]*>/g, '[image]');
   const words = noImagePrompt.split(/\s+/);
   return words.length > 1000 ? words.slice(0, 1000).join(" ") : noImagePrompt;
 };
 
-// ---------- Routes ----------
-
-// Root check
-app.get("/", (req, res) => {
-  res.send("Server with OpenAI + MongoDB API is running.");
+app2.get("/", (req, res) => {
+  res.send("OpenAI proxy server is running.");
 });
 
-// ===== OpenAI Proxy =====
-app.post("/openai-api/openai", async (req, res) => {
+app2.post("/openai-api/openai", async (req, res) => {
   const { prompt } = req.body;
+
   try {
     const trimmedPrompt = sanitizePrompt(prompt);
 
@@ -98,127 +258,4 @@ app.post("/openai-api/openai", async (req, res) => {
   }
 });
 
-// ===== Blog/Item APIs =====
-app.post("/api/senddocument", upload.single("image"), async (req, res) => {
-  try {
-    let imageUrl = null;
-    if (req.file) {
-      imageUrl = `${req.protocol}://${req.get("host")}/uploads/${
-        req.file.filename
-      }`;
-    }
-    const { title, content, summary } = req.body;
-    await Item.insertMany([{ title, content, imageUrl, summary }]);
-    res.status(200).json({ message: "Document sent", imageUrl });
-  } catch (error) {
-    console.log(error.message);
-    res.status(500).json({ message: error.message });
-  }
-});
-
-app.post("/api/upload-image", upload.single("image"), async (req, res) => {
-  try {
-    if (!req.file) throw new Error("No file uploaded");
-    const filePath = path.join(__dirname, "uploads", req.file.filename);
-
-    try {
-      const processedImage = await sharp(filePath)
-        .toFormat("jpeg")
-        .jpeg({ quality: 80 })
-        .toBuffer();
-
-      const base64Image = processedImage.toString("base64");
-      const dataURI = `data:image/jpeg;base64,${base64Image}`;
-      fs.unlinkSync(filePath);
-
-      res.status(200).json({
-        data: { files: [dataURI], base64: dataURI, success: true },
-      });
-    } catch (processingError) {
-      console.error("Image processing failed:", processingError);
-      const fileData = fs.readFileSync(filePath);
-      const base64Image = fileData.toString("base64");
-      const dataURI = `data:${req.file.mimetype};base64,${base64Image}`;
-      fs.unlinkSync(filePath);
-
-      res.status(200).json({
-        data: { files: [dataURI], base64: dataURI, success: true },
-      });
-    }
-  } catch (error) {
-    console.error("Upload error:", error);
-    res.status(500).json({
-      data: {
-        messages: ["Failed to process image. Please try a different format."],
-        files: [],
-        success: false,
-      },
-    });
-  }
-});
-
-app.get("/api/items", async (req, res) => {
-  try {
-    const items = await Item.find({}, "title content summary");
-    res.json(items);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Server Error");
-  }
-});
-
-app.get("/api/items/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const item = await Item.findById(id);
-    if (!item) return res.status(404).json({ message: "Item not found" });
-    res.json(item);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-app.put("/api/update/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { title, content, summary } = req.body;
-    await Item.updateOne({ _id: id }, { $set: { title, content, summary } });
-    res.status(200).json({ message: "Successfully updated the Blog!" });
-  } catch (error) {
-    console.log({ Error: error.message });
-    res.status(500).json({ error: "Update failed" });
-  }
-});
-
-app.delete("/api/delete/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await Item.deleteOne({ _id: id });
-    if (result.deletedCount == 0)
-      return res.status(404).json({ message: "Blog not found." });
-    res.status(200).json({ message: "Successfully deleted the blog!" });
-  } catch (error) {
-    console.log({ Error: error.message });
-    res.status(500).json({ error: "Something went wrong while deleting" });
-  }
-});
-
-app.post("/api/feedbackpost/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const feedback = req.body.updatePOCfeedbacks;
-    const result = await Item.updateOne(
-      { _id: id },
-      { $push: { feedback: { $each: feedback } } }
-    );
-    res.status(200).json({ message: "Feedback added", result });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error while adding feedback!" });
-  }
-});
-
-// ---------- Start Server ----------
-app.listen(PORT, () =>
-  console.log(`Server running on http://localhost:${PORT}`)
-);
+app2.listen(3001, () => console.log('OpenAIServer running on http://localhost:3001'));
