@@ -5,9 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start":"nodemon server.js",
-    "dev":"nodemon server.js",
-    "openai":"node openaiserver.js"
+    "start":"nodemon index.js",
+    "dev":"nodemon index.js"
   },
   "author": "",
   "license": "ISC",
