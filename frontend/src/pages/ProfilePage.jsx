@@ -21,6 +21,7 @@ const ProfilePage = () => {
 
   useEffect(() => {
     console.log(containerRef.current);
+    console.log("Hello profile page");
   }, []);
 
   const handleHover = (index) => {
