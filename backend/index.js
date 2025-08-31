@@ -15,7 +15,7 @@ const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const API_BASE="https://blog-chey-frontend-7pvo7u97p-mgurucharans-projects.vercel.app"
+const API_BASE="https://blog-chey-frontend.vercel.app"
 
 app.use(
   cors({
