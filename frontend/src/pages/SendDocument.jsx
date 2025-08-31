@@ -8,7 +8,6 @@ import arrow from "../assets/arrow.png"
 
 const SendDocument = () => {
   const API_BASE = "https://blog-chey-backend.vercel.app";
-;
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
