@@ -7,7 +7,8 @@ import Plasma from "../components/Plasma";
 import arrow from "../assets/arrow.png"
 
 const SendDocument = () => {
-  const API_BASE = "https://blog-chey-frontend.vercel.app";
+  const API_BASE = "https://blog-chey-backend.vercel.app";
+;
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
