@@ -133,13 +133,14 @@ app.post("/api/upload-image", upload.single("image"), async (req, res) => {
 
 //gets all the items from the collection
 app.get('/api/items', async (req, res) => {
-  try {
-    const items = await Item.find({}, "title content summary"); // gets all the data from the database
-    res.json(items);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Server Error");
-  }
+//   try {
+//     const items = await Item.find({}, "title content summary"); // gets all the data from the database
+//     res.json(items);
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).send("Server Error");
+//   }
+    res.send("Hello api items");
 });
 
 app.get("/api/items/:id", async (req, res) => {
