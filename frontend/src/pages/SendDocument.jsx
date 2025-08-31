@@ -34,6 +34,7 @@ const SendDocument = () => {
     const fetchBlogs = async () => {
       try {
         const response = await axios.get(`${API_BASE}/api/items`);
+        console.log(response.data)
         setBlogs(response.data);
       } catch (error) {
         setError(error.message || "Something went wrong");

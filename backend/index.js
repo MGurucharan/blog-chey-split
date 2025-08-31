@@ -15,6 +15,7 @@ const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const API_BASE="https://blog-chey-frontend-7pvo7u97p-mgurucharans-projects.vercel.app"
 
 app.use(
   cors({
@@ -133,7 +134,7 @@ app.post("/api/upload-image", upload.single("image"), async (req, res) => {
 });
 
 //gets all the items from the collection
-app.get("/api/items", async (req, res) => {
+app.get(`${API_BASE}/api/items`, async (req, res) => {
   try {
     const items = await Item.find({}, "title content summary"); // gets all the data from the database
     res.json(items);
