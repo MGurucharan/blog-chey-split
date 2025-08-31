@@ -31,7 +31,6 @@ const SendDocument = () => {
 
 
   useEffect(() => {
-    console.log("Moundted")
     const fetchBlogs = async () => {
       try {
         const response = await axios.get(`${API_BASE}/api/items`);
