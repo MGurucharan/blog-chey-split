@@ -7,7 +7,6 @@ import Plasma from "../components/Plasma";
 import arrow from "../assets/arrow.png"
 
 const SendDocument = () => {
-  const API_BASE = "https://blog-chey-backend.vercel.app";
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -18,7 +17,7 @@ const SendDocument = () => {
     try {
       const option = prompt("Are you sure ?");
       if (option && option.toLowerCase() === "yes") {
-        await axios.delete(`${API_BASE}/api/delete/${blog_id}`);
+        await axios.delete(`/api/delete/${blog_id}`);
         alert("Successfully deleted !");
         setBlogs((prevBlogs) =>
           prevBlogs.filter((blog) => blog._id !== blog_id)
@@ -33,7 +32,7 @@ const SendDocument = () => {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const response = await axios.get(`${API_BASE}/api/items`);
+        const response = await axios.get("/api/items");
         console.log(response.data)
         setBlogs(response.data);
       } catch (error) {
