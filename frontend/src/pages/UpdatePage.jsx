@@ -24,7 +24,7 @@ const UpdatePage = () => {
 
     const fetchBlog = async () => {
       try {
-        const response = await axios.get(`/api/items/${id}`);
+        const response = await axios.get(`https://blog-chey-backend.onrender.com/api/items/${id}`);
         const blog = response.data;
         if (!savedTitle) setTitle(blog.title);
         if (!savedContent) setContent(blog.content);
@@ -52,14 +52,14 @@ const UpdatePage = () => {
 
     try {
       const strippedContent = content.replace(/<img[^>]*>/g, "[image]");
-      const summaryRes = await axios.post("/openai-api/openai", {
+      const summaryRes = await axios.post("https://blog-chey-backend.onrender.com/openai-api/openai", {
         prompt: `Below is an HTML blog post. Ignore the [image] placeholders and summarize in 25 words only.\n\n${strippedContent}`,
       });
       const summaryText = summaryRes.data.choices[0].message.content;
       setSummary(summaryText);
 
       await axios.put(
-        `/api/update/${id}`,
+        `https://blog-chey-backend.onrender.com/api/update/${id}`,
         { title, content: cleanContent, summary: summaryText },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -85,7 +85,7 @@ const UpdatePage = () => {
     defaultActionOnPaste: "insert_as_plaintext",
     uploader: {
       insertImageAsBase64URI: true,
-      url: "http://localhost:5000/api/upload-image",
+      url: "https://blog-chey-backend.onrender.com/api/upload-image",
       format: "json",
       method: "POST",
       filesVariableName: () => "image",
