@@ -26,7 +26,7 @@ const BlogPage = () => {
     setChatMessages((prev) => [...prev, { sender: "user", text: userQuery }]);
     setChatInput("");
     try {
-      const response = await axios.post("/fastapi/post", {
+      const response = await axios.post("https://blog-chey-backend.onrender.com/fastapi/post", {
         title: title,
         question: userQuery,
       });
@@ -45,7 +45,7 @@ const BlogPage = () => {
     else if (type === "translate") command = `Translate the blog of ${title}`;
     setChatMessages((prev) => [...prev, { sender: "user", text: command }]);
     try {
-      const response = await axios.post("/fastapi/post", {
+      const response = await axios.post("https://blog-chey-backend.onrender.com/fastapi/post", {
         title: title,
         question: command,
       });
@@ -70,7 +70,7 @@ const BlogPage = () => {
     setPOCfeedbacks(updatePOCfeedbacks);
     e.preventDefault();
     try {
-      await axios.post(`/api/feedbackpost/${id}`, { updatePOCfeedbacks });
+      await axios.post(`https://blog-chey-backend.onrender.com/api/feedbackpost/${id}`, { updatePOCfeedbacks });
     } catch (error) {
       console.log("Error : ", error);
     }
@@ -79,7 +79,7 @@ const BlogPage = () => {
   useEffect(() => {
     const fetchBlog = async () => {
       try {
-        const response = await axios.get(`/api/items/${id}`);
+        const response = await axios.get(`https://blog-chey-backend.onrender.com/api/items/${id}`);
         const blog = response.data;
         setBlog(blog);
         setTitle(blog.title);
