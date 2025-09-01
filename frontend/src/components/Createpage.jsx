@@ -37,7 +37,7 @@ const Createpage = () => {
 
     try {
       const strippedContent = content.replace(/<img[^>]*>/g, "[image]");
-      const summaryRes = await axios.post("/openai-api/openai", {
+      const summaryRes = await axios.post("https://blog-chey-backend.onrender.com/openai-api/openai", {
         prompt: `Below is an HTML blog post. Ignore the [image] placeholders and generate a small excerpt of 30 words only.\n\n${strippedContent}`,
       });
       const summaryText = summaryRes.data.choices[0].message.content;
@@ -45,7 +45,7 @@ const Createpage = () => {
 
       
       await axios.post(
-        "/api/senddocument",
+        "https://blog-chey-backend.onrender.com/api/senddocument",
         { title, content: cleanContent, summary: summaryText },
         { headers: { "Content-Type": "application/json" } }
       );
