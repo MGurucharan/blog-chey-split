@@ -10,7 +10,7 @@ const Intro = () => {
   useEffect(() => {
     const ingester = async () => {
       try {
-        const response = await axios.post("/fastapi/ingest");
+        const response = await axios.post("https://blog-chey-bot.onrender.com/fastapi/ingest");
         console.log("Ingestion started:", response.data);
       } catch (error) {
         console.error("Ingestion error:", error);

@@ -26,7 +26,7 @@ const BlogPage = () => {
     setChatMessages((prev) => [...prev, { sender: "user", text: userQuery }]);
     setChatInput("");
     try {
-      const response = await axios.post("https://blog-chey-backend.onrender.com/fastapi/post", {
+      const response = await axios.post("https://blog-chey-bot.onrender.com/fastapi/post", {
         title: title,
         question: userQuery,
       });
@@ -45,7 +45,7 @@ const BlogPage = () => {
     else if (type === "translate") command = `Translate the blog of ${title}`;
     setChatMessages((prev) => [...prev, { sender: "user", text: command }]);
     try {
-      const response = await axios.post("https://blog-chey-backend.onrender.com/fastapi/post", {
+      const response = await axios.post("https://blog-chey-bot.onrender.com/fastapi/post", {
         title: title,
         question: command,
       });
